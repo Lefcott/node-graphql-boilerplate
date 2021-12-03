@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["dataproxy", "referentialIntegrity"]
+}
+
+datasource db {
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  shadowDatabaseUrl    = env("SHADOW_DATABASE_URL")
+  referentialIntegrity = "prisma"
+}
+
+generator nexusPrisma {
+  provider = "nexus-prisma"
+}
+
+model User {
+  id             Int        @id @default(autoincrement()) /// The user's ID
+  games          UserGame[]
+  name           String /// The user's name
+  surname        String /// The user's surname
+  phone          String /// The user's phone number
+  nickname       String     @unique /// The user's nickname. It must be unique
+  email          String     @unique /// The user's email. It must be unique
+  password       String /// The user's hashed password
+  emailConfirmed Boolean    @default(false) /// A boolean indicating if the user's email has been confirmed
+  coins          Int        @default(0) /// The number of coins the user has
+
+  @@map("users")
+}
+
+model Game {
+  id             Int        @id @default(autoincrement()) /// The game's ID
+  userGames      UserGame[]
+  name           String /// Descriptive name of the game
+  code           String     @unique /// It's useful for identifying the game. It must be unique
+  status         String /// "betting" or "spinning"
+  nextStatusDate DateTime   @default(now()) /// The date when the game will change its status
+  betSeconds     Int /// Seconds the user has to bet
+  spinSeconds    Int /// Time the spin will last
+  gameData       Json /// Data for the specific game
+
+  @@map("games")
+}
+
+model UserGame {
+  user             User   @relation(fields: [userId], references: [id])
+  userId           Int
+  game             Game   @relation(fields: [gameId], references: [id])
+  gameId           Int
+  currentBetResult String
+  currentBetCoins  Int
+
+  @@id([userId, gameId])
+  @@map("userGames")
+}
